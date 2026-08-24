@@ -48,7 +48,7 @@ export const RedeemConfirmationModal: React.FC = () => {
 
   const maxQuantity = reward ? Math.max(1, Math.floor(currentBalance / reward.coin_cost)) : 1;
 
-  // Reset quantity when modal opens for a reward
+  // Reset quantity ONCE when modal opens or when target reward changes
   useEffect(() => {
     if (isOpen) {
       setQuantity(1);
@@ -57,7 +57,8 @@ export const RedeemConfirmationModal: React.FC = () => {
       setErrorMessage(null);
       reset({ confirmCheck: true });
     }
-  }, [isOpen, reward?.id, reset]);
+
+  }, [isOpen, reward?.id]);
 
   if (!reward) return null;
 
@@ -82,27 +83,27 @@ export const RedeemConfirmationModal: React.FC = () => {
   };
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^0-9]/g, '');
-    setQuantityInput(raw);
-    if (raw === '') {
+    const raw = e.target.value;
+    const digitsOnly = raw.replace(/[^0-9]/g, '');
+    setQuantityInput(digitsOnly);
+
+    if (digitsOnly === '') {
       setQuantity(1);
       return;
     }
-    const val = parseInt(raw, 10);
+
+    const val = parseInt(digitsOnly, 10);
     if (!isNaN(val) && val >= 1) {
       setQuantity(val);
     }
   };
 
   const handleQuantityBlur = () => {
-    const val = parseInt(quantityInput, 10);
-    if (isNaN(val) || val < 1) {
+    if (quantityInput === '' || parseInt(quantityInput, 10) < 1) {
       setQuantity(1);
       setQuantityInput('1');
-    } else if (val > maxQuantity) {
-      setQuantity(maxQuantity);
-      setQuantityInput(maxQuantity.toString());
     } else {
+      const val = parseInt(quantityInput, 10);
       setQuantity(val);
       setQuantityInput(val.toString());
     }
@@ -202,7 +203,7 @@ export const RedeemConfirmationModal: React.FC = () => {
                   onChange={handleQuantityInputChange}
                   onBlur={handleQuantityBlur}
                   disabled={isLoading}
-                  className="w-16 sm:w-20 px-1 text-center bg-transparent text-sm font-bold text-white focus:outline-none cursor-text select-all"
+                  className="w-16 sm:w-20 px-1 text-center bg-transparent text-sm font-bold text-white focus:outline-none cursor-text"
                 />
                 <button
                   type="button"

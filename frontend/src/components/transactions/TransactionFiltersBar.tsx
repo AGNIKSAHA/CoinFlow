@@ -66,8 +66,9 @@ export const TransactionFiltersBar: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60 text-xs">
         {/* Date Range */}
         <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-2.5 py-1.5 rounded-xl text-xs">
-          <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-          <div className="flex items-center gap-1 w-full">
+          {/* Start Date */}
+          <div className="flex items-center gap-1 w-full min-w-0">
+            <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0 pointer-events-none" />
             <input
               type="date"
               value={filters.startDate}
@@ -75,10 +76,16 @@ export const TransactionFiltersBar: React.FC = () => {
               onChange={(e) =>
                 dispatch(setDateRange({ startDate: e.target.value, endDate: filters.endDate }))
               }
-              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark]"
+              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
               title="Start Date"
             />
-            <span className="text-slate-500 font-bold text-xs">–</span>
+          </div>
+
+          <span className="text-slate-500 font-bold text-xs shrink-0">–</span>
+
+          {/* End Date */}
+          <div className="flex items-center gap-1 w-full min-w-0">
+            <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0 pointer-events-none" />
             <input
               type="date"
               value={filters.endDate}
@@ -86,7 +93,7 @@ export const TransactionFiltersBar: React.FC = () => {
               onChange={(e) =>
                 dispatch(setDateRange({ startDate: filters.startDate, endDate: e.target.value }))
               }
-              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark]"
+              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
               title="End Date"
             />
           </div>

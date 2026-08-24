@@ -63,6 +63,7 @@ export const RedeemConfirmationModal: React.FC = () => {
 
   const totalCost = reward.coin_cost * quantity;
   const balanceAfter = currentBalance - totalCost;
+  const isExceedingMax = quantity > maxQuantity;
 
   const handleDecrease = () => {
     setQuantity((prev) => {
@@ -88,8 +89,8 @@ export const RedeemConfirmationModal: React.FC = () => {
       return;
     }
     const val = parseInt(raw, 10);
-    if (!isNaN(val)) {
-      setQuantity(Math.max(1, Math.min(maxQuantity, val)));
+    if (!isNaN(val) && val >= 1) {
+      setQuantity(val);
     }
   };
 
@@ -175,19 +176,19 @@ export const RedeemConfirmationModal: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Quantity Selector Section */}
           <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="text-xs font-semibold text-slate-300 block">Quantity</span>
-                <span className="text-[11px] text-slate-400">Maximum available: {maxQuantity}</span>
+                <span className="text-[11px] text-slate-400">Maximum available: {formatNumber(maxQuantity)}</span>
               </div>
 
               {/* Quantity Counter Control */}
-              <div className="flex items-center border border-slate-700 bg-slate-900 rounded-xl overflow-hidden">
+              <div className="flex items-center border border-slate-700 bg-slate-900 rounded-xl overflow-hidden min-w-[120px] justify-between">
                 <button
                   type="button"
                   onClick={handleDecrease}
                   disabled={quantity <= 1 || isLoading}
-                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3.5 h-3.5" />
@@ -201,13 +202,13 @@ export const RedeemConfirmationModal: React.FC = () => {
                   onChange={handleQuantityInputChange}
                   onBlur={handleQuantityBlur}
                   disabled={isLoading}
-                  className="w-12 text-center bg-transparent text-sm font-bold text-white focus:outline-none cursor-text select-all"
+                  className="w-16 sm:w-20 px-1 text-center bg-transparent text-sm font-bold text-white focus:outline-none cursor-text select-all"
                 />
                 <button
                   type="button"
                   onClick={handleIncrease}
                   disabled={quantity >= maxQuantity || isLoading}
-                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -233,12 +234,20 @@ export const RedeemConfirmationModal: React.FC = () => {
               </div>
               <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
                 <span className="text-slate-200">Balance After Redemption:</span>
-                <span className={balanceAfter >= 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                <span className={!isExceedingMax && balanceAfter >= 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
                   {formatNumber(balanceAfter)} coins
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Warning banner if quantity exceeds max limit */}
+          {isExceedingMax && (
+            <div className="flex items-center gap-2 p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-xs text-amber-300">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Quantity exceeds maximum available balance limit ({formatNumber(maxQuantity)} vouchers).</span>
+            </div>
+          )}
 
           {/* Error Banner if API fails */}
           {errorMessage && (
@@ -254,7 +263,7 @@ export const RedeemConfirmationModal: React.FC = () => {
               <input
                 type="checkbox"
                 {...register('confirmCheck')}
-                disabled={isLoading}
+                disabled={isLoading || isExceedingMax}
                 className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <span>
@@ -275,7 +284,7 @@ export const RedeemConfirmationModal: React.FC = () => {
               type="submit"
               variant="primary"
               isLoading={isLoading}
-              disabled={isLoading || totalCost > currentBalance}
+              disabled={isLoading || isExceedingMax || totalCost > currentBalance}
               className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold border-amber-400/30"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >

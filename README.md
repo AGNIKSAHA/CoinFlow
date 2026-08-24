@@ -82,11 +82,26 @@ pip install -r requirements.txt
 # Run database initializer (creates database coinflow_db automatically if not present)
 python init_db.py
 
-# Run Alembic Database Migrations
-python -m alembic upgrade head
+## Database Setup
 
-# Run Data Seed Script (ingests 10,000 transactions & initializes rewards + coins)
-python -m scripts.seed
+### Run migrations
+```bash
+alembic upgrade head
+```
+
+### Seed transaction data
+```bash
+python scripts/seed_transactions.py
+```
+
+### Verify
+```sql
+SELECT COUNT(*) FROM transactions;
+```
+Expected output:
+```text
+10000 transactions
+```
 
 # Run Pytest suite
 python -m pytest

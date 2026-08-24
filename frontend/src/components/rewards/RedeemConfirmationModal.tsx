@@ -81,9 +81,12 @@ export const RedeemConfirmationModal: React.FC = () => {
   };
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
+    const raw = e.target.value.replace(/[^0-9]/g, '');
     setQuantityInput(raw);
-    if (raw === '') return;
+    if (raw === '') {
+      setQuantity(1);
+      return;
+    }
     const val = parseInt(raw, 10);
     if (!isNaN(val)) {
       setQuantity(Math.max(1, Math.min(maxQuantity, val)));
@@ -184,7 +187,7 @@ export const RedeemConfirmationModal: React.FC = () => {
                   type="button"
                   onClick={handleDecrease}
                   disabled={quantity <= 1 || isLoading}
-                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors"
+                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3.5 h-3.5" />
@@ -194,16 +197,17 @@ export const RedeemConfirmationModal: React.FC = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={quantityInput}
+                  onFocus={(e) => e.currentTarget.select()}
                   onChange={handleQuantityInputChange}
                   onBlur={handleQuantityBlur}
                   disabled={isLoading}
-                  className="w-12 text-center bg-transparent text-sm font-bold text-white focus:outline-none"
+                  className="w-12 text-center bg-transparent text-sm font-bold text-white focus:outline-none cursor-text select-all"
                 />
                 <button
                   type="button"
                   onClick={handleIncrease}
                   disabled={quantity >= maxQuantity || isLoading}
-                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors"
+                  className="px-3 py-1.5 text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3.5 h-3.5" />

@@ -65,8 +65,17 @@ export const CustomTransactionTable: React.FC = () => {
     }
   };
 
+  const isTableLoading = isLoading || isFetching;
+
   const transactions = response?.data || [];
   const pagination = response?.pagination;
+
+  // Retain last known pagination during page transitions so pagination bar stays visible
+  const lastPaginationRef = React.useRef(pagination);
+  if (pagination) {
+    lastPaginationRef.current = pagination;
+  }
+  const activePagination = pagination || lastPaginationRef.current;
 
   return (
     <div className="space-y-4">
@@ -108,21 +117,20 @@ export const CustomTransactionTable: React.FC = () => {
 
             {/* Table Body */}
             <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
-              {isLoading && (
-                Array.from({ length: 8 }).map((_, idx) => (
+              {isTableLoading &&
+                Array.from({ length: Math.min(filters.pageSize || 10, 10) }).map((_, idx) => (
                   <tr key={idx} className="animate-pulse">
-                    <td className="py-4 px-4"><div className="h-4 bg-slate-800 rounded w-32" /></td>
-                    <td className="py-4 px-4"><div className="h-4 bg-slate-800 rounded w-20" /></td>
-                    <td className="py-4 px-4"><div className="h-4 bg-slate-800 rounded w-28" /></td>
-                    <td className="py-4 px-4"><div className="h-4 bg-slate-800 rounded w-24" /></td>
-                    <td className="py-4 px-4"><div className="h-4 bg-slate-800 rounded w-16" /></td>
-                    <td className="py-4 px-4 text-right"><div className="h-4 bg-slate-800 rounded w-20 ml-auto" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-slate-800/80 rounded w-32" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-slate-800/80 rounded w-20" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-slate-800/80 rounded w-28" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-slate-800/80 rounded w-24" /></td>
+                    <td className="py-4 px-4"><div className="h-4 bg-slate-800/80 rounded w-16" /></td>
+                    <td className="py-4 px-4 text-right"><div className="h-4 bg-slate-800/80 rounded w-20 ml-auto" /></td>
                     <td className="py-4 px-4" />
                   </tr>
-                ))
-              )}
+                ))}
 
-              {!isLoading && isError && (
+              {!isTableLoading && isError && (
                 <tr>
                   <td colSpan={7} className="p-8">
                     <ErrorState title="Failed to load transactions" onRetry={refetch} />
@@ -130,7 +138,7 @@ export const CustomTransactionTable: React.FC = () => {
                 </tr>
               )}
 
-              {!isLoading && !isError && transactions.length === 0 && (
+              {!isTableLoading && !isError && transactions.length === 0 && (
                 <tr>
                   <td colSpan={7} className="p-8">
                     <EmptyState onAction={() => dispatch(resetFilters())} />
@@ -138,7 +146,7 @@ export const CustomTransactionTable: React.FC = () => {
                 </tr>
               )}
 
-              {!isLoading &&
+              {!isTableLoading &&
                 !isError &&
                 transactions.map((txn) => {
                   const catColor = CATEGORY_COLORS[txn.category || 'Uncategorized'] || '#94a3b8';
@@ -206,7 +214,7 @@ export const CustomTransactionTable: React.FC = () => {
         </div>
 
         {/* Server-Side Pagination Bar */}
-        <TransactionPagination pagination={pagination} />
+        <TransactionPagination pagination={activePagination} isLoading={isTableLoading} />
       </Card>
 
       {/* Transaction Details Modal/Drawer */}

@@ -10,9 +10,10 @@ import { formatNumber } from '@/lib/formatters';
 
 export interface TransactionPaginationProps {
   pagination?: PaginationMetadata;
+  isLoading?: boolean;
 }
 
-export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pagination }) => {
+export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pagination, isLoading = false }) => {
   const dispatch = useAppDispatch();
   const filters = useAppSelector((state) => state.transactionUi.filters);
 
@@ -37,8 +38,9 @@ export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pa
           <span>Rows per page:</span>
           <select
             value={filters.pageSize}
+            disabled={isLoading}
             onChange={(e) => dispatch(setPageSize(Number(e.target.value)))}
-            className="bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+            className="bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-2 py-1 focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {[10, 25, 50, 100].map((size) => (
               <option key={size} value={size}>
@@ -58,7 +60,7 @@ export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pa
         <Button
           variant="outline"
           size="sm"
-          disabled={page === 1}
+          disabled={page === 1 || isLoading}
           onClick={() => dispatch(setPage(1))}
           className="p-1.5 h-8 w-8"
           aria-label="First page"
@@ -69,7 +71,7 @@ export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pa
         <Button
           variant="outline"
           size="sm"
-          disabled={page === 1}
+          disabled={page === 1 || isLoading}
           onClick={() => dispatch(setPage(page - 1))}
           className="p-1.5 h-8 w-8"
           aria-label="Previous page"
@@ -80,7 +82,7 @@ export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pa
         <Button
           variant="outline"
           size="sm"
-          disabled={page >= total_pages}
+          disabled={page >= total_pages || isLoading}
           onClick={() => dispatch(setPage(page + 1))}
           className="p-1.5 h-8 w-8"
           aria-label="Next page"
@@ -91,7 +93,7 @@ export const TransactionPagination: React.FC<TransactionPaginationProps> = ({ pa
         <Button
           variant="outline"
           size="sm"
-          disabled={page >= total_pages}
+          disabled={page >= total_pages || isLoading}
           onClick={() => dispatch(setPage(total_pages))}
           className="p-1.5 h-8 w-8"
           aria-label="Last page"

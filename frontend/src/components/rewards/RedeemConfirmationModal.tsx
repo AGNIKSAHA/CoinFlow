@@ -31,6 +31,7 @@ export const RedeemConfirmationModal: React.FC = () => {
   const currentBalance = balanceData?.data.balance ?? 0;
 
   const [quantity, setQuantity] = useState<number>(1);
+  const [quantityInput, setQuantityInput] = useState<string>('1');
   const [redeemMutation, { isLoading }] = useRedeemRewardMutation();
   const [successData, setSuccessData] = useState<RedeemRewardResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,10 +46,13 @@ export const RedeemConfirmationModal: React.FC = () => {
     defaultValues: { confirmCheck: true }
   });
 
+  const maxQuantity = reward ? Math.max(1, Math.floor(currentBalance / reward.coin_cost)) : 1;
+
   // Reset quantity when modal opens for a reward
   useEffect(() => {
     if (isOpen) {
       setQuantity(1);
+      setQuantityInput('1');
       setSuccessData(null);
       setErrorMessage(null);
       reset({ confirmCheck: true });
@@ -57,24 +61,46 @@ export const RedeemConfirmationModal: React.FC = () => {
 
   if (!reward) return null;
 
-  const maxQuantity = Math.max(1, Math.floor(currentBalance / reward.coin_cost));
   const totalCost = reward.coin_cost * quantity;
   const balanceAfter = currentBalance - totalCost;
 
   const handleDecrease = () => {
-    setQuantity((prev) => Math.max(1, prev - 1));
+    setQuantity((prev) => {
+      const next = Math.max(1, prev - 1);
+      setQuantityInput(next.toString());
+      return next;
+    });
   };
 
   const handleIncrease = () => {
-    setQuantity((prev) => Math.min(maxQuantity, prev + 1));
+    setQuantity((prev) => {
+      const next = Math.min(maxQuantity, prev + 1);
+      setQuantityInput(next.toString());
+      return next;
+    });
   };
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    if (isNaN(val)) {
-      setQuantity(1);
-    } else {
+    const raw = e.target.value;
+    setQuantityInput(raw);
+    if (raw === '') return;
+    const val = parseInt(raw, 10);
+    if (!isNaN(val)) {
       setQuantity(Math.max(1, Math.min(maxQuantity, val)));
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    const val = parseInt(quantityInput, 10);
+    if (isNaN(val) || val < 1) {
+      setQuantity(1);
+      setQuantityInput('1');
+    } else if (val > maxQuantity) {
+      setQuantity(maxQuantity);
+      setQuantityInput(maxQuantity.toString());
+    } else {
+      setQuantity(val);
+      setQuantityInput(val.toString());
     }
   };
 
@@ -82,6 +108,7 @@ export const RedeemConfirmationModal: React.FC = () => {
     setSuccessData(null);
     setErrorMessage(null);
     setQuantity(1);
+    setQuantityInput('1');
     reset();
     dispatch(closeRedeemModal());
   };
@@ -163,13 +190,14 @@ export const RedeemConfirmationModal: React.FC = () => {
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <input
-                  type="number"
-                  value={quantity}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={quantityInput}
                   onChange={handleQuantityInputChange}
-                  min={1}
-                  max={maxQuantity}
+                  onBlur={handleQuantityBlur}
                   disabled={isLoading}
-                  className="w-12 text-center bg-transparent text-sm font-bold text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-12 text-center bg-transparent text-sm font-bold text-white focus:outline-none"
                 />
                 <button
                   type="button"

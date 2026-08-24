@@ -6,6 +6,7 @@ export interface Reward {
   category: string;
   image_url: string;
   is_active: boolean;
+  redeemed_quantity?: number;
   is_redeemed?: boolean;
   created_at: string;
 }
@@ -19,13 +20,16 @@ export interface CoinBalance {
 
 export interface RedeemRewardRequest {
   reward_id: string;
+  quantity?: number;
 }
 
 export interface RedeemRewardResponse {
   redemption_id: string;
   reward_id: string;
   reward_name: string;
-  coins_deducted: number;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
   remaining_balance: number;
   redeemed_at: string;
 }

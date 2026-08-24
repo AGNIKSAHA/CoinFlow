@@ -1,5 +1,5 @@
 from sqlmodel import Session, select, text
-from typing import List, Optional, Set
+from typing import List, Optional, Dict
 from datetime import datetime
 from app.models.reward import Reward
 from app.models.coin_account import CoinAccount
@@ -11,7 +11,7 @@ class RewardRepository:
 
     def get_all_active_rewards(self) -> List[Reward]:
         query = select(Reward).where(Reward.is_active == True).order_by(Reward.coin_cost.asc())
-        return self.session.exec(query).all()
+        return list(self.session.exec(query).all())
 
     def get_reward_by_id(self, reward_id: str) -> Optional[Reward]:
         return self.session.get(Reward, reward_id)
@@ -33,10 +33,10 @@ class RewardRepository:
         total_successful_spend = float(self.session.exec(spend_sql).one()[0] or 0)
         earned_coins = int(total_successful_spend // 100)
 
-        # 2. Total redeemed coins from redemptions table
+        # 2. Total redeemed coins from redemptions table (sum of total_cost)
         account = self.get_coin_account(user_id)
         redemption_sql = text(
-            "SELECT COALESCE(SUM(r.coin_cost), 0) "
+            "SELECT COALESCE(SUM(COALESCE(r.total_cost, r.coin_cost * r.quantity)), 0) "
             "FROM redemptions r "
             "WHERE r.account_id = :account_id AND LOWER(r.status) = 'success'"
         )
@@ -54,38 +54,33 @@ class RewardRepository:
         self.session.refresh(account)
         return account
 
-    def get_user_redeemed_reward_ids(self, user_id: str = "default_user") -> Set[str]:
+    def get_user_redeemed_quantities(self, user_id: str = "default_user") -> Dict[str, int]:
         account = self.get_coin_account(user_id)
-        redemptions = self.session.exec(
-            select(Redemption.reward_id).where(
-                Redemption.account_id == account.id,
-                Redemption.status == "SUCCESS"
-            )
-        ).all()
-        return set(redemptions)
-
-    def is_reward_already_redeemed(self, account_id: int, reward_id: str) -> bool:
-        query = select(Redemption).where(
-            Redemption.account_id == account_id,
-            Redemption.reward_id == reward_id,
-            Redemption.status == "SUCCESS"
+        sql = text(
+            "SELECT r.reward_id, COALESCE(SUM(r.quantity), 0) "
+            "FROM redemptions r "
+            "WHERE r.account_id = :account_id AND LOWER(r.status) = 'success' "
+            "GROUP BY r.reward_id"
         )
-        return self.session.exec(query).first() is not None
+        rows = self.session.exec(sql, params={"account_id": account.id}).all()
+        return {str(row[0]): int(row[1]) for row in rows}
 
     def create_redemption(
-        self, account: CoinAccount, reward: Reward
+        self, account: CoinAccount, reward: Reward, quantity: int
     ) -> Redemption:
-        # Atomic redemption record creation
+        total_cost = reward.coin_cost * quantity
         redemption = Redemption(
             account_id=account.id,
             reward_id=reward.id,
+            quantity=quantity,
             coin_cost=reward.coin_cost,
+            total_cost=total_cost,
             status="SUCCESS"
         )
         self.session.add(redemption)
         self.session.commit()
 
-        # Recalculate and update stats
+        # Recalculate stats in database
         self.get_coin_balance_stats(account.user_id)
         self.session.refresh(redemption)
         return redemption

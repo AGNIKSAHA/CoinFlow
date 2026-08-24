@@ -17,12 +17,14 @@ class RewardService:
 
     def get_rewards(self, user_id: str = "default_user") -> ApiResponse[List[RewardRead]]:
         rewards = self.repo.get_all_active_rewards()
-        redeemed_ids = self.repo.get_user_redeemed_reward_ids(user_id)
+        redeemed_quantities = self.repo.get_user_redeemed_quantities(user_id)
         
         result: List[RewardRead] = []
         for r in rewards:
             r_data = RewardRead.model_validate(r)
-            r_data.is_redeemed = r.id in redeemed_ids
+            qty = redeemed_quantities.get(r.id, 0)
+            r_data.redeemed_quantity = qty
+            r_data.is_redeemed = qty > 0
             result.append(r_data)
 
         return ApiResponse(data=result)
@@ -34,7 +36,14 @@ class RewardService:
     def redeem_reward(
         self, req: RedeemRewardRequest, user_id: str = "default_user"
     ) -> ApiResponse[RedeemRewardResponse]:
-        # 1. Fetch reward
+        # 1. Validate quantity
+        if req.quantity < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "INVALID_QUANTITY", "message": "Redemption quantity must be at least 1."}
+            )
+
+        # 2. Fetch reward
         reward = self.repo.get_reward_by_id(req.reward_id)
         if not reward:
             raise HTTPException(
@@ -48,44 +57,38 @@ class RewardService:
                 detail={"code": "REWARD_INACTIVE", "message": "This reward is no longer available for redemption."}
             )
 
-        # 2. Fetch current dynamic coin account stats
+        # 3. Fetch current dynamic coin account stats
         account = self.repo.get_coin_balance_stats(user_id)
 
-        # 3. Check if already redeemed (duplicate prevention)
-        if self.repo.is_reward_already_redeemed(account.id, reward.id):
+        # 4. Calculate authoritative backend total cost
+        total_cost = reward.coin_cost * req.quantity
+
+        # 5. Check sufficient balance
+        if account.balance < total_cost:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
-                    "code": "REWARD_ALREADY_REDEEMED",
-                    "message": f"You have already redeemed '{reward.name}'."
+                    "code": "INSUFFICIENT_REWARD_BALANCE",
+                    "message": "Insufficient reward coins for this redemption."
                 }
             )
 
-        # 4. Check sufficient balance
-        if account.balance < reward.coin_cost:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "code": "INSUFFICIENT_BALANCE",
-                    "message": f"Insufficient balance. You need {reward.coin_cost} coins, but currently have {account.balance} coins."
-                }
-            )
-
-        # 5. Perform atomic redemption transaction
+        # 6. Perform atomic redemption transaction
         try:
-            redemption = self.repo.create_redemption(account, reward)
-            # Re-fetch updated balance
+            redemption = self.repo.create_redemption(account, reward, req.quantity)
             updated_account = self.repo.get_coin_balance_stats(user_id)
             return ApiResponse(
                 data=RedeemRewardResponse(
                     redemption_id=redemption.id,
                     reward_id=reward.id,
                     reward_name=reward.name,
-                    coins_deducted=reward.coin_cost,
+                    quantity=req.quantity,
+                    unit_cost=reward.coin_cost,
+                    total_cost=total_cost,
                     remaining_balance=updated_account.balance,
                     redeemed_at=redemption.created_at
                 ),
-                message=f"Successfully redeemed '{reward.name}'!"
+                message=f"Successfully redeemed {req.quantity}x '{reward.name}'!"
             )
         except Exception as e:
             self.session.rollback()

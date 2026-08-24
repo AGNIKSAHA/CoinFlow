@@ -3,8 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 import time
 from collections import defaultdict
-from fastapi import HTTPException, status
-from app.core.config import settings
+from fastapi import status
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -22,6 +21,10 @@ class SimpleRateLimiterMiddleware(BaseHTTPMiddleware):
         self.client_requests = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
+        # Always allow preflight OPTIONS requests immediately
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
         

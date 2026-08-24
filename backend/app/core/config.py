@@ -10,17 +10,20 @@ class Settings(BaseSettings):
     
     DATABASE_URL: str = "postgresql://postgres:1234@localhost:5432/coinflow_db"
     ENVIRONMENT: str = "development"
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: List[str] = ["*"]
     RATE_LIMIT_PER_MINUTE: int = 120
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
+            v_str = v.strip()
+            if v_str in ["*", '["*"]', "'*'"]:
+                return ["*"]
             try:
-                return json.loads(v)
+                return json.loads(v_str)
             except Exception:
-                return [i.strip() for i in v.split(",")]
+                return [i.strip() for i in v_str.split(",")]
         return v
 
     model_config = SettingsConfigDict(

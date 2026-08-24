@@ -16,11 +16,11 @@ app = FastAPI(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SimpleRateLimiterMiddleware, requests_per_minute=settings.RATE_LIMIT_PER_MINUTE)
 
-# 2. CORS Middleware
+# 2. CORS Middleware (allows all origins, methods, and headers)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -69,7 +69,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 def health_check():
     return {"status": "ok", "environment": settings.ENVIRONMENT, "version": settings.VERSION}
 
-# 5. Include API V1 Routers
+# 5. Include API Routers with /api/v1 prefix AND root fallback prefix
 app.include_router(transactions.router, prefix=settings.API_V1_STR)
 app.include_router(rewards.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
+
+# Also mount at root without /api/v1 as a fallback for Vercel env configs missing /api/v1
+app.include_router(transactions.router)
+app.include_router(rewards.router)
+app.include_router(analytics.router)

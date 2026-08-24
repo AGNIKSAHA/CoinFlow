@@ -4,11 +4,24 @@ import { Reward, CoinBalance, RedeemRewardRequest, RedeemRewardResponse } from '
 import { CategorySpendResponse, MonthlySpendResponse } from '@/types/analytics';
 import { PaginatedApiResponse, ApiResponse } from '@/types/api';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const getBaseUrl = (): string => {
+  if (
+    process.env.NEXT_PUBLIC_API_URL
+  ) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  return '/api/v1';
+};
 
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: getBaseUrl(),
+    prepareHeaders: (headers) => {
+      headers.set('ngrok-skip-browser-warning', 'true');
+      return headers;
+    }
+  }),
   tagTypes: ['Transactions', 'Rewards', 'CoinBalance', 'Analytics'],
   endpoints: (builder) => ({
     getTransactions: builder.query<PaginatedApiResponse<Transaction>, TransactionFilterState>({

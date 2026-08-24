@@ -12,7 +12,7 @@ export default function RewardsPage() {
         </p>
       </div>
 
-      <CoinBalanceCard />
+      <CoinBalanceCard showRedeemButton={false} />
       <RewardGrid />
     </div>
   );

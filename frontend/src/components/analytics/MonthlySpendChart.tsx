@@ -30,6 +30,14 @@ export const MonthlySpendChart: React.FC = () => {
     count: item.transaction_count
   }));
 
+  const formatCompactCurrency = (val: number): string => {
+    if (val === 0) return '₹0';
+    if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}k`;
+    return `₹${val}`;
+  };
+
   return (
     <Card className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 mb-4">
@@ -44,7 +52,7 @@ export const MonthlySpendChart: React.FC = () => {
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 10, right: 10, left: 15, bottom: 0 }}>
             <defs>
               <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
@@ -62,9 +70,10 @@ export const MonthlySpendChart: React.FC = () => {
             <YAxis
               stroke="#64748b"
               fontSize={11}
+              width={65}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
+              tickFormatter={formatCompactCurrency}
             />
             <Tooltip
               content={({ active, payload, label }) => {

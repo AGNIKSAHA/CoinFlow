@@ -54,7 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -65,14 +65,14 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden focus:outline-none animate-in zoom-in-95 duration-200`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[88vh] flex flex-col bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden focus:outline-none animate-in zoom-in-95 duration-200`}
       >
-        {/* Header */}
+        {/* Header (fixed at top of modal) */}
         {(title || subtitle) && (
-          <div className="flex items-start justify-between p-5 border-b border-slate-800 bg-slate-900/60">
+          <div className="flex items-start justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 shrink-0">
             <div>
               {title && (
-                <h3 id="modal-title" className="text-lg font-semibold text-slate-100">
+                <h3 id="modal-title" className="text-base sm:text-lg font-bold text-slate-100">
                   {title}
                 </h3>
               )}
@@ -98,8 +98,10 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         )}
 
-        {/* Content */}
-        <div className="p-5">{children}</div>
+        {/* Scrollable Content Body */}
+        <div className="p-4 sm:p-5 overflow-y-auto max-h-[calc(88vh-70px)] scrollbar-thin scrollbar-thumb-slate-800">
+          {children}
+        </div>
       </div>
     </div>
   );

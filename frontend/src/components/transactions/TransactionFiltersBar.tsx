@@ -65,26 +65,31 @@ export const TransactionFiltersBar: React.FC = () => {
       {/* Second Row: Date Range + Amount Range + Payment Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60 text-xs">
         {/* Date Range */}
-        <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-xl">
-          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <input
-            type="date"
-            value={filters.startDate}
-            onChange={(e) =>
-              dispatch(setDateRange({ startDate: e.target.value, endDate: filters.endDate }))
-            }
-            className="bg-transparent text-slate-200 focus:outline-none w-full text-xs"
-            placeholder="Start"
-          />
-          <span className="text-slate-500">–</span>
-          <input
-            type="date"
-            value={filters.endDate}
-            onChange={(e) =>
-              dispatch(setDateRange({ startDate: filters.startDate, endDate: e.target.value }))
-            }
-            className="bg-transparent text-slate-200 focus:outline-none w-full text-xs"
-          />
+        <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-2.5 py-1.5 rounded-xl text-xs">
+          <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+          <div className="flex items-center gap-1 w-full">
+            <input
+              type="date"
+              value={filters.startDate}
+              onClick={(e) => e.currentTarget.showPicker?.()}
+              onChange={(e) =>
+                dispatch(setDateRange({ startDate: e.target.value, endDate: filters.endDate }))
+              }
+              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark]"
+              title="Start Date"
+            />
+            <span className="text-slate-500 font-bold text-xs">–</span>
+            <input
+              type="date"
+              value={filters.endDate}
+              onClick={(e) => e.currentTarget.showPicker?.()}
+              onChange={(e) =>
+                dispatch(setDateRange({ startDate: filters.startDate, endDate: e.target.value }))
+              }
+              className="bg-transparent text-slate-200 focus:outline-none w-full text-xs cursor-pointer [color-scheme:dark]"
+              title="End Date"
+            />
+          </div>
         </div>
 
         {/* Amount Range */}

@@ -8,7 +8,13 @@ import { formatNumber } from '@/lib/formatters';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 
-export const CoinBalanceCard: React.FC = () => {
+export interface CoinBalanceCardProps {
+  showRedeemButton?: boolean;
+}
+
+export const CoinBalanceCard: React.FC<CoinBalanceCardProps> = ({
+  showRedeemButton = true,
+}) => {
   const { data: balanceData, isLoading } = useGetCoinBalanceQuery();
   const balance = balanceData?.data.balance ?? 0;
   const totalEarned = balanceData?.data.total_earned ?? 0;
@@ -42,7 +48,7 @@ export const CoinBalanceCard: React.FC = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-6 bg-slate-950/60 p-4 rounded-xl border border-slate-800/60">
+        <div className={`grid ${showRedeemButton ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'} gap-4 lg:gap-6 bg-slate-950/60 p-4 rounded-xl border border-slate-800/60`}>
           <div>
             <span className="text-xs text-slate-400 block font-medium">Total Earned</span>
             <span className="text-base font-bold text-slate-200">
@@ -55,18 +61,20 @@ export const CoinBalanceCard: React.FC = () => {
               {isLoading ? '...' : formatNumber(totalRedeemed)}
             </span>
           </div>
-          <div className="col-span-2 sm:col-span-1 flex items-center justify-end">
-            <Link href="/rewards">
-              <Button
-                variant="primary"
-                size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold border-amber-400/30 shadow-lg shadow-amber-500/20"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-              >
-                Redeem Now
-              </Button>
-            </Link>
-          </div>
+          {showRedeemButton && (
+            <div className="col-span-2 sm:col-span-1 flex items-center justify-end">
+              <Link href="/rewards">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold border-amber-400/30 shadow-lg shadow-amber-500/20"
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
+                  Redeem Now
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </Card>

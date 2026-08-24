@@ -25,7 +25,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500 bg-slate-950">
-            <p>© 2026 CoinFlow Financial Inc. Digital Alpha Technologies Assessment Implementation.</p>
+            <p>© 2026 CoinFlow Financial Inc. AGNIK SAHA Assessment Implementation.</p>
           </footer>
         </StoreProvider>
       </body>

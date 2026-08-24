@@ -75,7 +75,7 @@ export const api = createApi({
         method: 'POST',
         body
       }),
-      invalidatesTags: ['CoinBalance']
+      invalidatesTags: ['CoinBalance', 'Rewards']
     })
   })
 });

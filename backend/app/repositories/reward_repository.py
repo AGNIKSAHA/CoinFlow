@@ -1,5 +1,6 @@
-from sqlmodel import Session, select
-from typing import List, Optional
+from sqlmodel import Session, select, text
+from typing import List, Optional, Set
+from datetime import datetime
 from app.models.reward import Reward
 from app.models.coin_account import CoinAccount
 from app.models.redemption import Redemption
@@ -25,14 +26,56 @@ class RewardRepository:
             self.session.refresh(account)
         return account
 
+    def get_coin_balance_stats(self, user_id: str = "default_user") -> CoinAccount:
+        """Dynamically calculates earned coins from successful transactions and redeemed coins from redemptions."""
+        # 1. Total successful spend from PostgreSQL transactions table
+        spend_sql = text("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE LOWER(status) = 'success'")
+        total_successful_spend = float(self.session.exec(spend_sql).one()[0] or 0)
+        earned_coins = int(total_successful_spend // 100)
+
+        # 2. Total redeemed coins from redemptions table
+        account = self.get_coin_account(user_id)
+        redemption_sql = text(
+            "SELECT COALESCE(SUM(r.coin_cost), 0) "
+            "FROM redemptions r "
+            "WHERE r.account_id = :account_id AND LOWER(r.status) = 'success'"
+        )
+        total_redeemed = int(self.session.exec(redemption_sql, params={"account_id": account.id}).one()[0] or 0)
+
+        current_balance = max(0, earned_coins - total_redeemed)
+
+        # 3. Update account record with current dynamic balance stats
+        account.total_earned = earned_coins
+        account.total_redeemed = total_redeemed
+        account.balance = current_balance
+        account.updated_at = datetime.utcnow()
+        self.session.add(account)
+        self.session.commit()
+        self.session.refresh(account)
+        return account
+
+    def get_user_redeemed_reward_ids(self, user_id: str = "default_user") -> Set[str]:
+        account = self.get_coin_account(user_id)
+        redemptions = self.session.exec(
+            select(Redemption.reward_id).where(
+                Redemption.account_id == account.id,
+                Redemption.status == "SUCCESS"
+            )
+        ).all()
+        return set(redemptions)
+
+    def is_reward_already_redeemed(self, account_id: int, reward_id: str) -> bool:
+        query = select(Redemption).where(
+            Redemption.account_id == account_id,
+            Redemption.reward_id == reward_id,
+            Redemption.status == "SUCCESS"
+        )
+        return self.session.exec(query).first() is not None
+
     def create_redemption(
         self, account: CoinAccount, reward: Reward
     ) -> Redemption:
-        # Atomic updates within current session
-        account.balance -= reward.coin_cost
-        account.total_redeemed += reward.coin_cost
-        self.session.add(account)
-
+        # Atomic redemption record creation
         redemption = Redemption(
             account_id=account.id,
             reward_id=reward.id,
@@ -41,6 +84,8 @@ class RewardRepository:
         )
         self.session.add(redemption)
         self.session.commit()
-        self.session.refresh(account)
+
+        # Recalculate and update stats
+        self.get_coin_balance_stats(account.user_id)
         self.session.refresh(redemption)
         return redemption

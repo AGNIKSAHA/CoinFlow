@@ -6,6 +6,7 @@ export interface Reward {
   category: string;
   image_url: string;
   is_active: boolean;
+  is_redeemed?: boolean;
   created_at: string;
 }
 

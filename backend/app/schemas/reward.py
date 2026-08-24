@@ -10,6 +10,7 @@ class RewardRead(BaseModel):
     category: str
     image_url: str
     is_active: bool
+    is_redeemed: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
